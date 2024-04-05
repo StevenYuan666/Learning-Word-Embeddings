@@ -817,8 +817,9 @@ def compute_direct_bias(
     """
     total = 0
     for word in words:
-        emb = word_to_embedding[word]
-        total += np.abs(cosine_similarity(emb, gender_subspace[0])) ** c
+        for w in word.split():
+            emb = word_to_embedding[w]
+            total += np.abs(cosine_similarity(emb, gender_subspace[0])) ** c
     return total / len(words)
 
 
@@ -912,197 +913,262 @@ def hard_debias(
     return debiased_word_to_embedding
 
 
+# First, using your implementation of compute_direct_bias, you will measure the gender bias
+# in the profession embeddings before and after applying HardDebias. When computing
+# DirectBias, you can use c = 0.25. Report these DirectBias values on Gradescope and
+# comment on what the ideal score for DirectBias (one to two sentences).
+
+
 if __name__ == "__main__":
     random.seed(2022)
     torch.manual_seed(2022)
 
-    # Parameters (you can change them)
-    sample_size = 2500  # Change this if you want to take a subset of data for testing
-    batch_size = 64
-    n_epochs = 2
-    num_words = 50000
+    # # Parameters (you can change them)
+    # sample_size = 2500  # Change this if you want to take a subset of data for testing
+    # batch_size = 64
+    # n_epochs = 2
+    # num_words = 50000
+    #
+    # # Load the data
+    # data_path = "../input/a1-data"  # Use this for kaggle
+    # # data_path = "data"  # Use this if running locally
+    #
+    # # If you use GPUs, use the code below:
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #
+    # # ###################### PART 1: TEST CODE ######################
+    # print("=" * 80)
+    # print("Running test code for part 1")
+    # print("-" * 80)
+    #
+    # # Prefilled code showing you how to use the helper functions
+    # train_raw, valid_raw = load_datasets(data_path)
+    # if sample_size is not None:
+    #     for key in ["premise", "hypothesis", "label"]:
+    #         train_raw[key] = train_raw[key][:sample_size]
+    #         valid_raw[key] = valid_raw[key][:sample_size]
+    #
+    # full_text = (
+    #         train_raw["premise"]
+    #         + train_raw["hypothesis"]
+    #         + valid_raw["premise"]
+    #         + valid_raw["hypothesis"]
+    # )
+    #
+    # # Process into indices
+    # tokens = tokenize_w2v(full_text)
+    #
+    # word_counts = build_word_counts(tokens)
+    # word_to_index = build_index_map(word_counts, max_words=num_words)
+    # index_to_word = {v: k for k, v in word_to_index.items()}
+    #
+    # text_indices = tokens_to_ix(tokens, word_to_index)
+    #
+    # # Train CBOW
+    # sources_cb, targets_cb = cbow_preprocessing(text_indices, window_size=2)
+    # loader_cb = DataLoader(
+    #     Word2VecDataset(sources_cb, targets_cb),
+    #     batch_size=batch_size,
+    #     shuffle=True,
+    #     collate_fn=collate_cbow,
+    # )
+    #
+    # model_cb = CBOW(num_words=len(word_to_index), embed_dim=200).to(device)
+    # optimizer = torch.optim.Adam(model_cb.parameters())
+    #
+    # for epoch in range(n_epochs):
+    #     loss = train_w2v(model_cb, optimizer, loader_cb, device=device).item()
+    #     print(f"Loss at epoch #{epoch}: {loss:.4f}")
+    #
+    # # Training Skip-Gram
+    #
+    # # TODO: your work here
+    # model_sg = SkipGram(num_words=len(word_to_index), embed_dim=200).to(device)
+    #
+    # # RETRIEVE SIMILAR WORDS
+    # word = "man"
+    #
+    # similar_words_cb = retrieve_similar_words(
+    #     model=model_cb,
+    #     word=word,
+    #     index_map=word_to_index,
+    #     index_to_word=index_to_word,
+    #     k=5,
+    # )
+    #
+    # similar_words_sg = retrieve_similar_words(
+    #     model=model_sg,
+    #     word=word,
+    #     index_map=word_to_index,
+    #     index_to_word=index_to_word,
+    #     k=5,
+    # )
+    #
+    # print(f"(CBOW) Words similar to '{word}' are: {similar_words_cb}")
+    # print(f"(Skip-gram) Words similar to '{word}' are: {similar_words_sg}")
+    #
+    # # COMPUTE WORDS ANALOGIES
+    # a = "man"
+    # b = "woman"
+    # c = "girl"
+    #
+    # analogies_cb = word_analogy(
+    #     model=model_cb,
+    #     word_a=a,
+    #     word_b=b,
+    #     word_c=c,
+    #     index_map=word_to_index,
+    #     index_to_word=index_to_word,
+    # )
+    # analogies_sg = word_analogy(
+    #     model=model_sg,
+    #     word_a=a,
+    #     word_b=b,
+    #     word_c=c,
+    #     index_map=word_to_index,
+    #     index_to_word=index_to_word,
+    # )
+    #
+    # print(f"CBOW's analogies for {a} - {b} + {c} are: {analogies_cb}")
+    # print(f"Skip-gram's analogies for {a} - {b} + {c} are: {analogies_sg}")
+    #
+    # # ###################### PART 1: TEST CODE ######################
+    #
+    # # Prefilled code showing you how to use the helper functions
+    # word_to_embedding = load_glove_embeddings("data/glove/glove.6B.300d.txt")
+    #
+    # professions = load_professions("data/professions.tsv")
+    #
+    # gender_attribute_words = load_gender_attribute_words(
+    #     "data/gender_attribute_words.json"
+    # )
+    #
+    # # === Section 2.1 ===
+    # gender_subspace = compute_gender_subspace(word_to_embedding, gender_attribute_words)
+    #
+    # # === Section 2.2 ===
+    # a = word_to_embedding
+    # b =
+    # scalar_projection, vector_projection = "your work here"
+    #
+    # # === Section 2.3 ===
+    # profession_to_embedding = "your work here"
+    #
+    # # === Section 2.4 ===
+    # positive_profession_words = "your work here"
+    # negative_profession_words = "your work here"
+    #
+    # print(f"Max profession words: {positive_profession_words}")
+    # print(f"Min profession words: {negative_profession_words}")
+    #
+    # # === Section 2.5 ===
+    # direct_bias_professions = "your work here"
+    #
+    # # === Section 2.6 ===
+    #
+    # # Prepare attribute word sets for testing
+    # A = ["male", "man", "boy", "brother", "he", "him", "his", "son"]
+    # B = ["female", "woman", "girl", "sister", "she", "her", "hers", "daughter"]
+    #
+    # # Prepare target word sets for testing
+    # X = ["doctor", "mechanic", "engineer"]
+    # Y = ["nurse", "artist", "teacher"]
+    #
+    # word = "doctor"
+    # weat_association = "your work here"
+    # weat_differential_association = "your work here"
+    #
+    # # === Section 3.1 ===
+    # debiased_word_to_embedding = "your work here"
+    # debiased_profession_to_embedding = "your work here"
+    #
+    # # === Section 3.2 ===
+    # direct_bias_professions_debiased = "your work here"
+    #
+    # print(f"DirectBias Professions (debiased): {direct_bias_professions_debiased:.2f}")
+    #
+    # X = [
+    #     "math",
+    #     "algebra",
+    #     "geometry",
+    #     "calculus",
+    #     "equations",
+    #     "computation",
+    #     "numbers",
+    #     "addition",
+    # ]
+    #
+    # Y = [
+    #     "poetry",
+    #     "art",
+    #     "dance",
+    #     "literature",
+    #     "novel",
+    #     "symphony",
+    #     "drama",
+    #     "sculpture",
+    # ]
+    #
+    # # Also run this test for debiased profession representations.
+    # p_value = "your work here"
+    #
+    # print(f"p-value: {p_value:.2f}")
+    import numpy as np
+    from sklearn.manifold import TSNE
+    import matplotlib.pyplot as plt
 
-    # Load the data
-    data_path = "../input/a1-data"  # Use this for kaggle
-    # data_path = "data"  # Use this if running locally
+    # Assuming helper functions are already defined and necessary data is loaded
 
-    # If you use GPUs, use the code below:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # ###################### PART 1: TEST CODE ######################
-    print("=" * 80)
-    print("Running test code for part 1")
-    print("-" * 80)
-
-    # Prefilled code showing you how to use the helper functions
-    train_raw, valid_raw = load_datasets(data_path)
-    if sample_size is not None:
-        for key in ["premise", "hypothesis", "label"]:
-            train_raw[key] = train_raw[key][:sample_size]
-            valid_raw[key] = valid_raw[key][:sample_size]
-
-    full_text = (
-            train_raw["premise"]
-            + train_raw["hypothesis"]
-            + valid_raw["premise"]
-            + valid_raw["hypothesis"]
-    )
-
-    # Process into indices
-    tokens = tokenize_w2v(full_text)
-
-    word_counts = build_word_counts(tokens)
-    word_to_index = build_index_map(word_counts, max_words=num_words)
-    index_to_word = {v: k for k, v in word_to_index.items()}
-
-    text_indices = tokens_to_ix(tokens, word_to_index)
-
-    # Train CBOW
-    sources_cb, targets_cb = cbow_preprocessing(text_indices, window_size=2)
-    loader_cb = DataLoader(
-        Word2VecDataset(sources_cb, targets_cb),
-        batch_size=batch_size,
-        shuffle=True,
-        collate_fn=collate_cbow,
-    )
-
-    model_cb = CBOW(num_words=len(word_to_index), embed_dim=200).to(device)
-    optimizer = torch.optim.Adam(model_cb.parameters())
-
-    for epoch in range(n_epochs):
-        loss = train_w2v(model_cb, optimizer, loader_cb, device=device).item()
-        print(f"Loss at epoch #{epoch}: {loss:.4f}")
-
-    # Training Skip-Gram
-
-    # TODO: your work here
-    model_sg = "TODO: use SkipGram"
-
-    # RETRIEVE SIMILAR WORDS
-    word = "man"
-
-    similar_words_cb = retrieve_similar_words(
-        model=model_cb,
-        word=word,
-        index_map=word_to_index,
-        index_to_word=index_to_word,
-        k=5,
-    )
-
-    similar_words_sg = retrieve_similar_words(
-        model=model_sg,
-        word=word,
-        index_map=word_to_index,
-        index_to_word=index_to_word,
-        k=5,
-    )
-
-    print(f"(CBOW) Words similar to '{word}' are: {similar_words_cb}")
-    print(f"(Skip-gram) Words similar to '{word}' are: {similar_words_sg}")
-
-    # COMPUTE WORDS ANALOGIES
-    a = "man"
-    b = "woman"
-    c = "girl"
-
-    analogies_cb = word_analogy(
-        model=model_cb,
-        word_a=a,
-        word_b=b,
-        word_c=c,
-        index_map=word_to_index,
-        index_to_word=index_to_word,
-    )
-    analogies_sg = word_analogy(
-        model=model_sg,
-        word_a=a,
-        word_b=b,
-        word_c=c,
-        index_map=word_to_index,
-        index_to_word=index_to_word,
-    )
-
-    print(f"CBOW's analogies for {a} - {b} + {c} are: {analogies_cb}")
-    print(f"Skip-gram's analogies for {a} - {b} + {c} are: {analogies_sg}")
-
-    # ###################### PART 1: TEST CODE ######################
-
-    # Prefilled code showing you how to use the helper functions
+    # Load GloVe embeddings and profession names
+    # glove_path = "path/to/glove.6B.300d.txt"
     word_to_embedding = load_glove_embeddings("data/glove/glove.6B.300d.txt")
+    professions_path = "data/professions.tsv"
+    professions = load_professions(professions_path)
+    gender_words_path = "data/gender_attribute_words.json"
+    gender_attribute_words = load_gender_attribute_words(gender_words_path)
 
-    professions = load_professions("data/professions.tsv")
+    # Step 1: Compute DirectBias before and after HardDebias
+    gender_direction = compute_gender_subspace(word_to_embedding, gender_attribute_words)
+    direct_bias_before = compute_direct_bias(professions, word_to_embedding, gender_direction, c=0.25)
+    debiased_embeddings = hard_debias(word_to_embedding, gender_attribute_words)
+    debiased_gender_direction = compute_gender_subspace(debiased_embeddings, gender_attribute_words)
+    direct_bias_after = compute_direct_bias(professions, debiased_embeddings, debiased_gender_direction, c=0.25)
 
-    gender_attribute_words = load_gender_attribute_words(
-        "data/gender_attribute_words.json"
-    )
+    # Step 2: WEAT Evaluation
+    # Define target and attribute sets as per assignment requirements
+    X = ["math", "algebra", "geometry", "calculus", "equations", "computation", "numbers", "addition"]  # Example target words for Math
+    Y = ["poetry", "art", "dance", "literature", "novel", "symphony", "drama", "sculpture"]  # Example target words for Arts
+    A = ["male", "man", "boy", "brother", "he", "him", "his", "son"]  # Male attribute words
+    B = ["female", "woman", "girl", "sister", "she", "her", "hers", "daughter"]  # Female attribute words
 
-    # === Section 2.1 ===
-    gender_subspace = "your work here"
+    weat_score_before = weat_differential_association(X, Y, A, B, word_to_embedding, weat_association)
+    p_value_before = p_value_permutation_test(X, Y, A, B, word_to_embedding)
+    weat_score_after = weat_differential_association(X, Y, A, B, debiased_embeddings, weat_association)
+    p_value_after = p_value_permutation_test(X, Y, A, B, debiased_embeddings)
 
-    # === Section 2.2 ===
-    a = "your work here"
-    b = "your work here"
-    scalar_projection, vector_projection = "your work here"
+    # Step 3: Gender Bias T-SNE Plot before debiasing
+    profession_embeddings = [word_to_embedding[profession] for profession in professions if
+                             profession in word_to_embedding]
+    tsne = TSNE(n_components=2, random_state=42)
+    # Filter professions to match embeddings list size
+    filtered_professions = [profession for profession in professions if profession in word_to_embedding]
 
-    # === Section 2.3 ===
-    profession_to_embedding = "your work here"
+    # Ensure we're iterating over the filtered list
+    profession_embeddings_2d = tsne.fit_transform(
+        [word_to_embedding[profession] for profession in filtered_professions])
 
-    # === Section 2.4 ===
-    positive_profession_words = "your work here"
-    negative_profession_words = "your work here"
+    plt.figure(figsize=(10, 10))
+    for i, profession in enumerate(filtered_professions):
+        plt.scatter(profession_embeddings_2d[i, 0], profession_embeddings_2d[i, 1])
+        plt.annotate(profession, (profession_embeddings_2d[i, 0], profession_embeddings_2d[i, 1]), fontsize=9)
+    plt.title('T-SNE visualization of profession embeddings before debiasing')
+    plt.xlabel('TSNE Component 1')
+    plt.ylabel('TSNE Component 2')
+    plt.show()
 
-    print(f"Max profession words: {positive_profession_words}")
-    print(f"Min profession words: {negative_profession_words}")
+    # Print results
+    print(f"DirectBias before debiasing: {direct_bias_before}")
+    print(f"DirectBias after debiasing: {direct_bias_after}")
+    print(f"WEAT score before debiasing: {weat_score_before}, p-value: {p_value_before}")
+    print(f"WEAT score after debiasing: {weat_score_after}, p-value: {p_value_after}")
 
-    # === Section 2.5 ===
-    direct_bias_professions = "your work here"
-
-    # === Section 2.6 ===
-
-    # Prepare attribute word sets for testing
-    A = ["male", "man", "boy", "brother", "he", "him", "his", "son"]
-    B = ["female", "woman", "girl", "sister", "she", "her", "hers", "daughter"]
-
-    # Prepare target word sets for testing
-    X = ["doctor", "mechanic", "engineer"]
-    Y = ["nurse", "artist", "teacher"]
-
-    word = "doctor"
-    weat_association = "your work here"
-    weat_differential_association = "your work here"
-
-    # === Section 3.1 ===
-    debiased_word_to_embedding = "your work here"
-    debiased_profession_to_embedding = "your work here"
-
-    # === Section 3.2 ===
-    direct_bias_professions_debiased = "your work here"
-
-    print(f"DirectBias Professions (debiased): {direct_bias_professions_debiased:.2f}")
-
-    X = [
-        "math",
-        "algebra",
-        "geometry",
-        "calculus",
-        "equations",
-        "computation",
-        "numbers",
-        "addition",
-    ]
-
-    Y = [
-        "poetry",
-        "art",
-        "dance",
-        "literature",
-        "novel",
-        "symphony",
-        "drama",
-        "sculpture",
-    ]
-
-    # Also run this test for debiased profession representations.
-    p_value = "your work here"
-
-    print(f"p-value: {p_value:.2f}")
